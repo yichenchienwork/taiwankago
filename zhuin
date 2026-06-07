@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台湾注音符号（ボポモフォ）学習アプリ</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #fcfbf7;
+    }
+    .serif-title {
+      font-family: 'Noto Serif TC', serif;
+    }
+    .dashed-box {
+      border: 2px dashed #f59e0b;
+    }
+    #canvas {
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .writing-vertical {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: shake 0.2s ease-in-out infinite;
+      animation-iteration-count: 2;
+    }
+    .tab-active {
+      background-color: #b45309;
+      color: white;
+    }
+    /* Print optimizations (Forces perfect A4 landscape sheet fit) */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 0.3cm;
+      }
+      body {
+        background-color: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        transform: scale(0.78);
+        transform-origin: top center;
+      }
+      main, section {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+        page-break-inside: avoid;
+        background-color: white !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 p-3 md:p-8 flex flex-col justify-between">
+
+  <div class="print-container max-w-7xl mx-auto w-full">
+    <!-- Header & App Navigation Bar -->
+    <header class="no-print w-full mb-6 bg-white/80 backdrop-blur border border-stone-200/60 p-4 rounded-2xl shadow-sm flex flex-col lg:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white font-black text-xl">
+          ㄅ
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-wider serif-title text-stone-800">台湾注音符号（ボポモフォ）総合学習システム</h1>
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <div class="bg-stone-100 p-1 rounded-xl flex items-center gap-1 text-sm font-medium">
+        <button onclick="switchTab('chart-page')" id="tab-chart-page" class="px-4 py-2 rounded-lg transition-all tab-active shadow-sm flex items-center gap-1.5">
+          <i data-lucide="grid" class="w-4 h-4"></i>
+          <span>注音符号表</span>
+        </button>
+        <button onclick="switchTab('robot-page')" id="tab-robot-page" class="px-4 py-2 rounded-lg transition-all text-stone-500 hover:text-stone-800 flex items-center gap-1.5">
+          <i data-lucide="cpu" class="w-4 h-4"></i>
+          <span>発音ロボット</span>
+        </button>
+      </div>
+
+      <!-- Controls and Toolbar -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="bg-stone-100 p-1 rounded-xl flex items-center gap-1 text-xs font-semibold">
+          <button onclick="changeMode('standard')" id="btn-standard" class="px-3 py-1.5 rounded-lg bg-white text-stone-800 shadow-sm">標準</button>
+          <button onclick="changeMode('pinyin')" id="btn-pinyin" class="px-3 py-1.5 rounded-lg text-stone-500 hover:text-stone-800">ピンイン</button>
+        </div>
+
+        <button onclick="startQuiz()" class="bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm">
+          <i data-lucide="gamepad-2" class="w-3.5 h-3.5"></i>
+          <span>発音テスト</span>
+        </button>
+
+        <button onclick="window.print()" class="border border-stone-300 hover:bg-stone-50 text-stone-600 font-medium text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>印刷する</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- PAGE 1: CORE CHART & COMBINED RIMES VIEW -->
+    <div id="page-chart-content" class="tab-content-block">
+      <!-- Main Layout Box (DESKTOP: Side-by-side R-to-L Grid view) -->
+      <main class="hidden md:block w-full bg-amber-50/10 border-2 border-amber-600/30 rounded-3xl p-6 shadow-md print-shadow-none bg-white">
+        <div class="grid grid-cols-11 gap-6 items-stretch">
+          
+          <!-- LEFT BLOCK: 韻符 (母音) - 5 Columns -->
+          <div class="col-span-5 border-r-2 border-stone-200/80 pr-4 flex gap-4">
+            <div class="flex-1 grid grid-cols-5 gap-2" id="grid-yunfu-desktop">
+              <!-- Instantiated via Javascript -->
+            </div>
+            <div class="flex flex-col justify-center items-center text-emerald-700 font-black px-1 shrink-0">
+              <span class="writing-vertical text-md tracking-widest serif-title border border-emerald-100 bg-emerald-50/50 py-4 px-1.5 rounded-xl">母音</span>
+            </div>
+          </div>
+
+          <!-- RIGHT BLOCK: 聲符 (子音) - 6 Columns -->
+          <div class="col-span-6 flex gap-4">
+            <div class="flex-1 grid grid-cols-6 gap-2" id="grid-shengfu-desktop">
+              <!-- Instantiated via Javascript -->
+            </div>
+            <div class="flex flex-col justify-center items-center text-cyan-700 font-black px-1 shrink-0">
+              <span class="writing-vertical text-md tracking-widest serif-title border border-cyan-100 bg-cyan-50/50 py-4 px-1.5 rounded-xl">子音</span>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- MOBILE ONLY: Beautiful portrait grid layout with zero horizontal scrolls -->
+      <main class="block md:hidden w-full bg-white border border-stone-200 rounded-2xl p-4 shadow-sm space-y-6">
+        <!-- 1. Consonants Section (子音) -->
+        <div>
+          <h3 class="text-xs font-black text-cyan-700 mb-3 tracking-widest border-b border-cyan-100 pb-1 flex justify-between items-center">
+            <span>子音 (声母)</span>
+            <span class="text-[10px] text-stone-400 font-normal">21音</span>
+          </h3>
+          <div class="grid grid-cols-4 gap-2" id="grid-shengfu-mobile">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- 2. Vowels Section (母音) -->
+        <div>
+          <h3 class="text-xs font-black text-emerald-700 mb-3 tracking-widest border-b border-emerald-100 pb-1 flex justify-between items-center">
+            <span>母音 (韻母)</span>
+            <span class="text-[10px] text-stone-400 font-normal">16音</span>
+          </h3>
+          <div class="grid grid-cols-4 gap-2" id="grid-yunfu-mobile">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </main>
+
+      <!-- BOTTOM BLOCK: 結合母音專區 -->
+      <section class="mt-6 w-full bg-white border-2 border-amber-600/20 rounded-3xl p-4 md:p-8 shadow-sm">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="w-7 h-7 bg-rose-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">合</span>
+          <div>
+            <h3 class="text-md font-bold tracking-wider serif-title text-stone-800">結合母音 (介音と母音の組み合わせ)</h3>
+            <p class="text-[11px] text-stone-500">介音「ㄧ, ㄨ, ㄩ」から始まる複母音記号です。</p>
+          </div>
+        </div>
+
+        <!-- Desktop combined grid (11 columns) -->
+        <div id="grid-combined-rimes-desktop" class="hidden md:grid grid-cols-11 gap-2.5">
+          <!-- Populated via JS -->
+        </div>
+
+        <!-- Mobile combined grid (4 columns) -->
+        <div id="grid-combined-rimes-mobile" class="grid md:hidden grid-cols-4 gap-2">
+          <!-- Populated via JS -->
+        </div>
+      </section>
+
+      <!-- TONES EXPLANATION BLOCK -->
+      <section class="mt-6 w-full bg-stone-50 border border-stone-200/60 rounded-3xl p-5 shadow-sm">
+        <div class="flex items-center gap-2 mb-3 text-stone-700">
+          <i data-lucide="music" class="w-4 h-4 text-amber-500"></i>
+          <h3 class="text-sm font-bold tracking-wider">【 華語の4つの声調（四声・アクセント）について 】</h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+          <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+            <span class="font-bold text-stone-800 block mb-1 text-center bg-stone-100 py-1 rounded-md">第一声（高平調）</span>
+            <p class="text-stone-500 mb-1"><strong>表記：</strong>記号なし (例：ㄚ)</p>
+            <p class="text-stone-600">高くて平らな音。ドレミの「ソ」をキープするように真っ直ぐ長く発音します。</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+            <span class="font-bold text-amber-700 block mb-1 text-center bg-amber-50 py-1 rounded-md">第二声（高昇調）</span>
+            <p class="text-stone-500 mb-1"><strong>表記：</strong>右上へ「 ˊ 」 (例：ㄚˊ)</p>
+            <p class="text-stone-600">下から上へ一気に引き上げる音。日本語で「ええ！？」と驚くときのような響きです。</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+            <span class="font-bold text-emerald-700 block mb-1 text-center bg-emerald-50 py-1 rounded-md">第三声（低降調）</span>
+            <p class="text-stone-500 mb-1"><strong>表記：</strong>V字「 ˇ 」 (例：ㄚˇ)</p>
+            <p class="text-stone-600">一番低いところまで声をグッと落とす音。低く抑えるようにため息混じりで出します。</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+            <span class="font-bold text-rose-700 block mb-1 text-center bg-rose-50 py-1 rounded-md">第四声（全降調）</span>
+            <p class="text-stone-500 mb-1"><strong>表記：</strong>右下へ「 ˋ 」 (例：ㄚˋ)</p>
+            <p class="text-stone-600">上から下へカラスの鳴き声のように鋭く投げ下ろす音。「アッ」と短く強く落とします。</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+            <span class="font-bold text-cyan-700 block mb-1 text-center bg-cyan-50 py-1 rounded-md">軽声（短低調）</span>
+            <p class="text-stone-500 mb-1"><strong>表記：</strong>頭に丸点「 ˙ 」 (例：˙ㄚ)</p>
+            <p class="text-stone-600">軽く短く添える音。前の音の勢いに任せて、力を抜いてポンと置くように発音します。</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- PAGE 2: SPEECH ROBOT INTERACTIVE ROBOT SYSTEM -->
+    <div id="page-robot-content" class="tab-content-block hidden no-print">
+      <div class="w-full bg-white border-2 border-stone-200 rounded-3xl p-4 md:p-6 shadow-sm max-w-4xl mx-auto">
+        <div class="flex items-center gap-3 border-b border-stone-100 pb-4 mb-6">
+          <div class="w-10 h-10 bg-stone-800 rounded-xl flex items-center justify-center text-white">
+            <i data-lucide="cpu" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-stone-800">注音拼音ロボット (発音メカ)</h2>
+            <p class="text-xs text-stone-400">子音、母音、声調をそれぞれ自由に選択して組み合わせて、華語の結合音システムを発音させましょう！</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Selector column 1: 子音 -->
+          <div class="bg-cyan-50/30 border border-cyan-100 p-3 md:p-4 rounded-2xl">
+            <h3 class="text-xs font-bold text-cyan-800 mb-2 flex justify-between"><span>1. 子音 (声母) を選ぶ</span><span class="text-stone-400 font-normal">任意</span></h3>
+            <div id="robot-consonants" class="grid grid-cols-4 gap-1.5 max-h-[220px] overflow-y-auto p-1 bg-white border border-stone-100 rounded-xl"></div>
+          </div>
+
+          <!-- Selector column 2: 母音/結合母音 -->
+          <div class="bg-emerald-50/30 border border-emerald-100 p-3 md:p-4 rounded-2xl">
+            <h3 class="text-xs font-bold text-emerald-800 mb-2 flex justify-between"><span>2. 母音 / 結合音を選ぶ</span><span class="text-amber-600 font-bold">必須 *</span></h3>
+            <div id="robot-vowels" class="grid grid-cols-3 gap-1.5 max-h-[220px] overflow-y-auto p-1 bg-white border border-stone-100 rounded-xl"></div>
+          </div>
+
+          <!-- Selector column 3: 聲調 -->
+          <div class="bg-rose-50/30 border border-rose-100 p-3 md:p-4 rounded-2xl flex flex-col justify-between">
+            <div>
+              <h3 class="text-xs font-bold text-rose-800 mb-2">3. 声調 (アクセント)</h3>
+              <div id="robot-tones" class="space-y-1.5 p-1 bg-white border border-stone-100 rounded-xl">
+                <button onclick="selectRobotTone('', '第一声')" id="tone-r-" class="w-full text-left text-xs font-semibold px-3 py-2 rounded-lg border border-stone-200 hover:bg-stone-50 transition flex justify-between"><span>第一声 (高平)</span><span class="text-stone-400">記号なし</span></button>
+                <button onclick="selectRobotTone('ˊ', '第二声')" id="tone-r-ˊ" class="w-full text-left text-xs font-semibold px-3 py-2 rounded-lg border border-stone-200 hover:bg-stone-50 transition flex justify-between"><span>第二声 (高昇)</span><span class="text-amber-600">ˊ</span></button>
+                <button onclick="selectRobotTone('ˇ', '第三声')" id="tone-r-ˇ" class="w-full text-left text-xs font-semibold px-3 py-2 rounded-lg border border-stone-200 hover:bg-stone-50 transition flex justify-between"><span>第三声 (低降)</span><span class="text-emerald-600">ˇ</span></button>
+                <button onclick="selectRobotTone('ˋ', '第四声')" id="tone-r-ˋ" class="w-full text-left text-xs font-semibold px-3 py-2 rounded-lg border border-stone-200 hover:bg-stone-50 transition flex justify-between"><span>第四声 (全降)</span><span class="text-rose-600">ˋ</span></button>
+                <button onclick="selectRobotTone('˙', '軽声')" id="tone-r-˙" class="w-full text-left text-xs font-semibold px-3 py-2 rounded-lg border border-stone-200 hover:bg-stone-50 transition flex justify-between"><span>軽声 (短低)</span><span class="text-cyan-600">˙</span></button>
+              </div>
+            </div>
+
+            <!-- Total Preview & Trigger Action Button -->
+            <div class="mt-4 pt-3 border-t border-stone-200/60">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-stone-400 block mb-1">現在の組み立てスロット</span>
+              <div class="bg-stone-900 text-white rounded-xl p-3 flex items-center justify-between shadow-inner">
+                <div class="flex items-baseline gap-1">
+                  <span id="preview-display-string" class="text-2xl font-black tracking-wider text-amber-400 serif-title">—</span>
+                  <span id="preview-display-tone-name" class="text-[10px] font-medium text-stone-400">アクセント未選</span>
+                </div>
+                <button id="robot-play-btn" onclick="triggerRobotVoiceSynthesis()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-900 w-10 h-10 rounded-lg flex items-center justify-center transition shadow-md">
+                  <i data-lucide="play" class="w-5 h-5 fill-stone-900"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="no-print text-center text-xs text-stone-400 mt-8 mb-4 max-w-7xl mx-auto w-full flex flex-col gap-1">
+    <p>© 台湾注音符号学習ツール · 華語（繁體字）学習用教材 · Papago準拠ピンイン対照 · 外部教材連携：<a href="https://kidsvideo1.hle.com.tw/1/" target="_blank" class="underline hover:text-amber-600 font-bold">翰林注音符號發音網</a></p>
+    <p class="font-semibold text-stone-500 mt-1">設計製作：簡翊真</p>
+  </footer>
+
+  <!-- INTERACTIVE POPUP MODAL -->
+  <div id="detail-modal" class="no-print hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-5 md:p-6 shadow-2xl border border-stone-100 flex flex-col gap-5 animate-in fade-in zoom-in duration-150">
+      
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-4">
+          <div id="modal-accent-bg" class="w-14 h-14 rounded-xl flex items-center justify-center text-2xl font-black text-white">
+            <span id="modal-char" class="serif-title">ㄅ</span>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 id="modal-title" class="text-xl font-bold text-stone-800">注音符号 ㄅ</h2>
+              <div class="flex items-center gap-1">
+                <button onclick="speakCurrentSymbol(0.75)" class="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg transition flex items-center gap-1 text-xs font-semibold">
+                  <i data-lucide="volume-2" class="w-3.5 h-3.5"></i><span>再生</span>
+                </button>
+                <button onclick="speakCurrentSymbol(0.5)" class="p-1.5 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-lg transition flex items-center gap-1 text-xs">
+                  <i data-lucide="turtle" class="w-3.5 h-3.5"></i><span>スロー</span>
+                </button>
+                <a id="modal-hle-link" href="https://kidsvideo1.hle.com.tw/1/" target="_blank" class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg transition flex items-center gap-1 text-xs font-semibold">
+                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i><span>發音教材</span>
+                </a>
+              </div>
+            </div>
+            <p class="text-xs text-stone-400 mt-0.5">ピンイン：<span id="modal-pinyin" class="font-bold text-stone-600">—</span> | グループ：<span id="modal-type" class="font-medium text-stone-600">—</span></p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-stone-400 hover:text-stone-600 p-1 rounded-lg hover:bg-stone-50 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center text-xs text-stone-500">
+            <span class="font-bold flex items-center gap-1"><i data-lucide="pen-tool" class="w-3.5 h-3.5"></i><span>なぞり書き練習 (九宮格)</span></span>
+            <button onclick="clearCanvas()" class="text-amber-700 font-bold flex items-center gap-0.5"><i data-lucide="eraser" class="w-3 h-3"></i><span>リセット</span></button>
+          </div>
+          <div class="relative w-full aspect-square border-2 border-amber-500/20 rounded-2xl overflow-hidden bg-white flex items-center justify-center">
+            <!-- Perfectly centered canvas guide word container -->
+            <div id="canvas-guide" class="absolute inset-0 flex items-center justify-center text-[190px] font-black text-stone-200/50 select-none serif-title pointer-events-none z-0">ㄅ</div>
+            <canvas id="canvas" class="absolute inset-0 w-full h-full z-10"></canvas>
+          </div>
+        </div>
+
+        <div class="flex flex-col justify-between bg-stone-50 p-4 rounded-2xl border border-stone-200/60 max-h-[300px] overflow-y-auto">
+          <div>
+            <h3 class="text-xs font-bold text-stone-400 tracking-wider mb-1.5">【 発音のアドバイス 】</h3>
+            <div class="mb-2">
+              <span class="text-[10px] font-semibold text-stone-400 block mb-0.5">日本語の近似音：</span>
+              <span id="modal-kana" class="text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60 inline-block">—</span>
+            </div>
+            <p class="text-xs text-stone-600 leading-relaxed"><strong class="text-stone-800">コツ：</strong> <span id="modal-tip">—</span></p>
+          </div>
+
+          <div class="border-t border-stone-200 pt-3 mt-3">
+            <h4 class="text-xs font-bold text-stone-400 mb-1.5">代表的な単語の例</h4>
+            <div class="flex items-center gap-2 bg-white border border-stone-200 p-2.5 rounded-xl shadow-xs">
+              <button onclick="speakExampleWord()" class="w-7 h-7 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 flex items-center justify-center transition shrink-0">
+                <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <p id="modal-example" class="text-xs font-bold text-stone-700 leading-normal">—</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIXED 10-QUESTION PROGRESSIVE QUIZ SCREEN OVERLAY -->
+  <div id="quiz-screen" class="no-print hidden fixed inset-0 bg-stone-50 z-50 flex flex-col justify-between p-4 md:p-6">
+    <div class="flex justify-between items-center max-w-2xl mx-auto w-full border-b border-stone-200 pb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">Q</span>
+        <h2 class="text-sm font-bold text-stone-800">注音聞き取りテスト (<span id="quiz-question-index" class="text-amber-700 font-black">1 / 10</span> 題)</h2>
+      </div>
+      <div class="flex items-center gap-4 text-xs">
+        <span class="font-semibold text-stone-500">現在のスコア: <span id="quiz-screen-score" class="text-amber-600 font-bold">0</span></span>
+        <button onclick="endQuiz()" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold px-2.5 py-1 rounded-lg transition">終了</button>
+      </div>
+    </div>
+
+    <!-- Main quiz visual area with inline interactive modal for finishing results (no browser alert!) -->
+    <div class="flex-1 flex flex-col items-center justify-center gap-5 max-w-md mx-auto w-full relative">
+      <div id="quiz-main-box" class="flex flex-col items-center justify-center gap-5">
+        <p class="text-xs text-stone-400 font-medium text-center">スピーカーを押して音声を再生（発音は1回のみ）</p>
+        <button onclick="replayQuizAudio()" class="w-28 h-28 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white flex flex-col items-center justify-center gap-1 shadow-md shadow-amber-500/10 transition-all">
+          <i data-lucide="volume-2" class="w-10 h-10"></i>
+          <span class="text-[10px] font-bold">発音を聞く</span>
+        </button>
+        <div id="quiz-feedback-text" class="text-xs font-bold min-h-[16px] transition-all"></div>
+      </div>
+
+      <!-- Built-in Modal inside iframe for final score (replaces prohibited browser alert) -->
+      <div id="quiz-result-card" class="hidden absolute inset-0 bg-white border border-stone-200 rounded-3xl p-6 shadow-lg flex flex-col items-center justify-center gap-4 text-center z-10">
+        <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
+          <i data-lucide="trophy" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-bold text-stone-800">テスト完了！</h3>
+        <p class="text-xs text-stone-500">あなたの最終スコアです：</p>
+        <span id="quiz-final-score-badge" class="text-5xl font-black text-amber-600">0</span>
+        <button onclick="endQuiz()" class="bg-stone-900 hover:bg-stone-950 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow transition mt-2">
+          メイン画面に戻る
+        </button>
+      </div>
+    </div>
+
+    <div class="max-w-xl mx-auto w-full grid grid-cols-2 gap-3 pb-8">
+      <button id="choice-0" onclick="submitQuizAnswer(0)" class="aspect-[2.2/1] rounded-xl border border-stone-200 bg-white text-2xl font-bold flex items-center justify-center text-stone-800 transition shadow-xs"></button>
+      <button id="choice-1" onclick="submitQuizAnswer(1)" class="aspect-[2.2/1] rounded-xl border border-stone-200 bg-white text-2xl font-bold flex items-center justify-center text-stone-800 transition shadow-xs"></button>
+      <button id="choice-2" onclick="submitQuizAnswer(2)" class="aspect-[2.2/1] rounded-xl border border-stone-200 bg-white text-2xl font-bold flex items-center justify-center text-stone-800 transition shadow-xs"></button>
+      <button id="choice-3" onclick="submitQuizAnswer(3)" class="aspect-[2.2/1] rounded-xl border border-stone-200 bg-white text-2xl font-bold flex items-center justify-center text-stone-800 transition shadow-xs"></button>
+    </div>
+  </div>
+
+  <script>
+    const bopomofoData = {
+      // 子音 (聲符)
+      "ㄅ": { symbol: "ㄅ", pinyin: "b", type: "shengfu", kana: "「バ」行の無気音", tip: "息を強く吐き出さず、喉を振動させずに「パ」と言うように発音する濁らない音です。", example: "爸爸 (ㄅㄚˋ ˙ㄅㄚ) ：お父さん", word: "爸爸", speakHelper: "ㄅㄛ" },
+      "ㄆ": { symbol: "ㄆ", pinyin: "p", type: "shengfu", kana: "「パ」行の有気音", tip: "日本語の「パ」よりもさらに強く、口から息を「ハッ」と強く吹き出しながら発音します。", example: "蘋果 (ㄆㄧㄥˊ ㄍㄨㄛˇ) ：りんご", word: "蘋果", speakHelper: "ㄆㄛ" },
+      "ㄇ": { symbol: "ㄇ", pinyin: "m", type: "shengfu", kana: "「マ」行の音", tip: "日本語の「マ」行とほぼ同じです。唇をしっかりと閉じてから鼻に抜けるように発音します。", example: "貓 (ㄇㄠ) ：ねこ", word: "貓", speakHelper: "ㄇㄛ" },
+      "ㄈ": { symbol: "ㄈ", pinyin: "f", type: "shengfu", kana: "「ファ」行の音", tip: "上の前歯を軽く下唇に当て、その隙間から息を「フッ」と吐き出しながら發音する摩擦音です。", example: "飛機 (ㄈㄟ ㄐㄧ) ：飛行機", word: "飛機", speakHelper: "ㄈㄛ" },
+      "ㄉ": { symbol: "ㄉ", pinyin: "d", type: "shengfu", kana: "「ダ」行の無気音", tip: "日本語の「タ」に近い構えから、息を強く出さずに「ダ」と優しく濁らずに発音します。", example: "地圖 (ㄉㄧˋ ㄊㄨˊ) ：地図", word: "地圖", speakHelper: "ㄉㄜ" },
+      "ㄊ": { symbol: "ㄊ", pinyin: "t", type: "shengfu", kana: "「タ」行の有気音", tip: "舌の先を上の歯茎の裏に強く押し当て、息を「ツッ」と鋭く吐き出しながら発音します。", example: "太陽 (ㄊㄞˋ ㄧㄤˊ) ：太陽", word: "太陽", speakHelper: "ㄊㄜ" },
+      "ㄋ": { symbol: "ㄋ", pinyin: "n", type: "shengfu", kana: "「ナ」行の音", tip: "日本語の「ナ」行とほぼ同じです。舌の先を上の歯の裏に当て、鼻から声を抜きます。", example: "牛奶 (ㄋㄧㄡˊ ㄋㄞˇ) ：牛乳", word: "牛奶", speakHelper: "ㄋㄜ" },
+      "ㄌ": { symbol: "ㄌ", pinyin: "l", type: "shengfu", kana: "「ラ」行の音", tip: "日本語の「ラ」行とほぼ同じです。英語のLのように、舌先を上歯茎の裏に当ててから発音します。", example: "綠色 (ㄌㄩˋ ㄙㄜˋ) ：緑色", word: "綠色", speakHelper: "ㄌㄜ" },
+      "ㄍ": { symbol: "ㄍ", pinyin: "g", type: "shengfu", kana: "「ガ」行の無気音", tip: "のどの奥を閉じた状態から、息を吹き出さずに「カ」に近い構えでクリアに発音します。", example: "哥哥 (ㄍㄜ ˙ㄍㄜ) ：お兄さん", word: "哥哥", speakHelper: "ㄍㄜ" },
+      "ㄎ": { symbol: "ㄎ", pinyin: "k", type: "shengfu", kana: "「カ」行の有気音", tip: "のどの奥から息を強く「ハッ」と吹き出しながら發音する、非常に強い「カ」の音です。", example: "咖啡 (ㄎㄚ ㄈㄟ) ：コーヒー", word: "咖啡", speakHelper: "ㄎㄜ" },
+      "ㄏ": { symbol: "ㄏ", pinyin: "h", type: "shengfu", kana: "「ハ」行の摩擦音", tip: "のどの奥から息を優しく吐き出し、軽く摩擦させて出す「ハ」の音です。英語のHよりも少し深めです。", example: "好 (ㄏㄠˇ) ：良い、OK", word: "好", speakHelper: "ㄏㄜ" },
+      "ㄐ": { symbol: "ㄐ", pinyin: "j", type: "shengfu", kana: "「ジ/チ」の無気音", tip: "日本語の「ジ」に近い構えから、舌を平らにして息を吐き出さずに澄んだ「チ」のように出します。", example: "餃子 (ㄐㄧㄠˇ ㄗ˙) ：餃子", word: "餃子", speakHelper: "ㄐㄧ" },
+      "ㄑ": { symbol: "ㄑ", pinyin: "q", type: "shengfu", kana: "「チ」の有気音", tip: "舌を平らにし、日本語の「チ」よりも舌の先から強く息を前方に吹き出しながら発音します。", example: "氣球 (ㄑㄧˋ ㄑㄧㄡˊ) ：風船", word: "氣球", speakHelper: "ㄑㄧ" },
+      "ㄒ": { symbol: "ㄒ", pinyin: "x", type: "shengfu", kana: "「シ」の摩擦音", tip: "日本語の「シ」にとても近いです。口を横に引き、息を歯の隙間からこすり出すように発音します。", example: "西瓜 (ㄒㄧ ㄍㄨㄚ) ：スイカ", word: "西瓜", speakHelper: "ㄒㄧ" },
+      "ㄓ": { symbol: "ㄓ", pinyin: "zh", type: "shengfu", kana: "「ヂ」のそり舌音", tip: "舌先をスプーンのように軽く上にそらせ、息を強く出さずに「ヂ」に近い濁らない音を出します。", example: "蜘蛛 (ㄓ ㄓㄨ) ：クモ", word: "蜘蛛", speakHelper: "ㄓ" },
+      "ㄔ": { symbol: "ㄔ", pinyin: "ch", type: "shengfu", kana: "「チ」のそり舌音", tip: "舌先を上へそらせた状態で固定し、口から強く息を勢いよく吹き出しながら「チ」と発音します。", example: "茶 (ㄔㄚˊ) ：お茶", word: "茶", speakHelper: "ㄔ" },
+      "ㄕ": { symbol: "ㄕ", pinyin: "sh", type: "shengfu", kana: "「シ」のそり舌音", tip: "舌先をそらせ、上あごに近づけた状態で隙間から「シュ」と息を摩擦させて出します。", example: "生日 (ㄕㄥ ㄖˋ) ：誕生日", word: "生日", speakHelper: "師" }, // FIXED: Pronunciation text helper changed from "開" to standard "師"
+      "ㄖ": { symbol: "ㄖ", pinyin: "r", type: "shengfu", kana: "「ル/ズ」に近いそり舌音", tip: "ㄕ(sh)の口の形のまま、声帯を振動させて「ル」に近い摩擦音を出します。英語のRに近い音です。", example: "熱 (ㄖㄜˋ) ：暑い、熱い", word: "熱", speakHelper: "ㄖ" },
+      "ㄗ": { symbol: "ㄗ", pinyin: "z", type: "shengfu", kana: "「ズ/ツ」の無気音", tip: "舌の先を上の歯の裏に当て、息を出さずに「ツ」から始めるように濁らずに発音します。", example: "早上 (ㄗㄠˇ ㄕㄤˋ) ：朝", word: "早上", speakHelper: "ㄗ" },
+      "ㄘ": { symbol: "ㄘ", pinyin: "c", type: "shengfu", kana: "「ツ」の有気音", tip: "舌先から息を強く「ツッ」と吹き出しながら發音します。日本語の「ツ」をより鋭くした音です。", example: "草莓 (ㄘㄠˇ ㄇㄟˊ) ：いちご", word: "草莓", speakHelper: "ㄘ" },
+      "ㄙ": { symbol: "ㄙ", pinyin: "s", type: "shengfu", kana: "「ス」の摩擦音", tip: "舌の先を下の歯の裏に近づけ、隙間から「ス」と息を摩擦させて出すクリアな音です。", example: "三 (ㄙㄢ) ：三", word: "三", speakHelper: "ㄙ" },
+
+      // 母音 (韻符)
+      "ㄧ": { symbol: "ㄧ", pinyin: "i", type: "yunfu", kana: "「イ」の音", tip: "日本語の「イ」よりも口を横に平たく引いて発音します。", example: "衣服 (ㄧ ㄈㄨˊ) ：服", word: "衣服", speakHelper: "ㄧ" },
+      "ㄨ": { symbol: "ㄨ", pinyin: "u", type: "yunfu", kana: "「ウ」の音", tip: "日本語 of 「ウ」よりも唇を丸くすぼめて前に突き出すように発音します。", example: "五 (ㄨˇ) ：五", word: "五", speakHelper: "ㄨ" },
+      "ㄩ": { symbol: "ㄩ", pinyin: "yu / ü", type: "yunfu", kana: "「ユ」に近い音", tip: "「イ」の口の形で、唇だけを丸く突き出したまま音を出します。", example: "魚 (ㄩˊ) ：魚", word: "魚", speakHelper: "ㄩ" },
+      "ㄚ": { symbol: "ㄚ", pinyin: "a", type: "yunfu", kana: "「ア」の音", tip: "日本語の「ア」よりも口を大きく開き発音します。", example: "大 (ㄉㄚˋ) ：大きい", word: "大", speakHelper: "ㄚ" },
+      "ㄛ": { symbol: "ㄛ", pinyin: "o", type: "yunfu", kana: "「オ」の音", tip: "唇を丸く突き出しながら「オ」と発音します。", example: "我 (ㄨㄛˇ) ：わたし", word: "我", speakHelper: "ㄛ" },
+      "ㄜ": { symbol: "ㄜ", pinyin: "e", type: "yunfu", kana: "曖昧な「エ/オ」", tip: "のどの奥で「オ」または「エ」と言うようにくぐもった音を出します。", example: "歌 (ㄍㄜ) ：歌", word: "歌", speakHelper: "ㄜ" },
+      "ㄝ": { symbol: "ㄝ", pinyin: "e / ie", type: "yunfu", kana: "「エ」の音", tip: "日本語の「エ」よりも、口を横に少し広く開けて発音します。", example: "謝謝 (ㄒㄧㄝˋ ㄒㄧㄝ˙) ：ありがとう", word: "謝謝", speakHelper: "ㄝ" },
+      "ㄞ": { symbol: "ㄞ", pinyin: "ai", type: "yunfu", kana: "「アイ」の音", tip: "「ア」を強く長めに発音するのがコツです。", example: "買 (ㄇㄞˇ) ：買う", word: "買", speakHelper: "ㄞ" },
+      "ㄟ": { symbol: "ㄟ", pinyin: "ei", type: "yunfu", kana: "「エイ」の音", tip: "「エ」から「イ」へなめらかにつなぎます。", example: "飛 (ㄈㄟ) ：飛ぶ", word: "飛", speakHelper: "ㄟ" },
+      "ㄠ": { symbol: "ㄠ", pinyin: "ao", type: "yunfu", kana: "「アオ」の音", tip: "「ア」を大きく発音したあと、すばやく「オ」につなぎます。", example: "包子 (ㄅㄠ ㄗ˙) ：肉まん", word: "包子", speakHelper: "ㄠ" },
+      "ㄡ": { symbol: "ㄡ", pinyin: "ou", type: "yunfu", kana: "「オウ」の音", tip: "「オ」の音をすばやく発音したあと、丸めて「ウ」につなげます。", example: "狗 (ㄍㄡˇ) ：いぬ", word: "狗", speakHelper: "ㄡ" },
+      "ㄢ": { symbol: "ㄢ", pinyin: "an", type: "yunfu", kana: "「アン」の音(n)", tip: "舌先を上の前歯の裏に押し当てて息を止めます。", example: "山 (ㄕㄢ) ：山", word: "山", speakHelper: "ㄢ" },
+      "ㄣ": { symbol: "ㄣ", pinyin: "en", type: "yunfu", kana: "「エン」の音(n)", tip: "曖昧な「エ」ののち、舌先を歯の裏につけて息を止めます。", example: "人 (ㄖㄣˊ) ：人", word: "人", speakHelper: "ㄣ" },
+      "ㄤ": { symbol: "ㄤ", pinyin: "ang", type: "yunfu", kana: "「アン」(ng)", tip: "舌先をどこにもつけずに、のどの奥を閉じて鼻に響かせます。", example: "幫忙 (ㄅㄤ ㄇㄤˊ) ：手伝う", word: "幫忙", speakHelper: "ㄤ" },
+      "ㄥ": { symbol: "ㄥ", pinyin: "eng", type: "yunfu", kana: "「エン」(ng)", tip: "曖昧な「エ」から、のどの奥を開いて鼻から息を抜きます。", example: "風 (ㄈㄥ) ：風", word: "風", speakHelper: "ㄥ" },
+      "ㄦ": { symbol: "ㄦ", pinyin: "er", type: "yunfu", kana: "「アル」の音", tip: "舌全体をのどの奥に引き戻すように軽くそらせます。", example: "兒子 (ㄦˊ ㄗ˙) ：息子", word: "兒子", speakHelper: "ㄦ" },
+
+      // 結合韻
+      "ㄧㄚ": { symbol: "ㄧㄚ", pinyin: "ia", type: "jieheyun", display: ["ㄧ","ㄚ"], kana: "「イヤ」の音", example: "鴨子 (ㄧㄚ ㄗ˙) ：アヒル", word: "鴨子", speakHelper: "鴨" },
+      "ㄧㄛ": { symbol: "ㄧㄛ", pinyin: "io", type: "jieheyun", display: ["ㄧ","ㄛ"], kana: "「イォ」の音", example: "唷 (ㄧㄛ) ：よ！（掛け声）", word: "唷", speakHelper: "唷" },
+      "ㄧㄝ": { symbol: "ㄧㄝ", pinyin: "ie", type: "jieheyun", display: ["ㄧ","ㄝ"], kana: "「イェ」の音", example: "姐姐 (ㄐㄧㄝˇ ㄐㄧㄝ˙) ：お姉さん", word: "姐姐", speakHelper: "耶" },
+      "ㄧㄞ": { symbol: "ㄧㄞ", pinyin: "iai", type: "jieheyun", display: ["ㄧ","ㄞ"], kana: "「イアイ」", example: "崖 (ㄧㄞˊ) ：崖", word: "崖", speakHelper: "崖" },
+      "ㄧㄠ": { symbol: "ㄧㄠ", pinyin: "iao", type: "jieheyun", display: ["ㄧ","ㄠ"], kana: "「イヤオ」", example: "小 (ㄒㄧㄠˇ) ：小さい", word: "小", speakHelper: "腰" },
+      "ㄧㄡ": { symbol: "ㄧㄡ", pinyin: "iu", type: "jieheyun", display: ["ㄧ","ㄡ"], kana: "「イォウ」", example: "六 (ㄌㄧㄡˋ) ：六", word: "六", speakHelper: "優" },
+      "ㄧㄢ": { symbol: "ㄧㄢ", pinyin: "ian", type: "jieheyun", display: ["ㄧ","ㄢ"], kana: "「イェン」", example: "甜 (ㄊㄧㄢˊ) ：甘い", word: "甜", speakHelper: "煙" },
+      "ㄧㄣ": { symbol: "ㄧㄣ", pinyin: "in", type: "jieheyun", display: ["ㄧ","ㄣ"], kana: "「イン」の音", example: "音樂 (ㄧㄣ ㄩㄝˋ) ：音楽", word: "音樂", speakHelper: "因" },
+      "ㄧㄤ": { symbol: "ㄧㄤ", pinyin: "iang", type: "jieheyun", display: ["ㄧ","ㄤ"], kana: "「イヤン」", example: "羊 (ㄧㄤˊ) ：ひつじ", word: "羊", speakHelper: "央" },
+      "ㄧㄥ": { symbol: "ㄧㄥ", pinyin: "ing", type: "jieheyun", display: ["ㄧ","ㄥ"], kana: "「イン」(ng)", example: "影 (ㄧㄥˇ) ：映画", word: "影", speakHelper: "英" },
+      "ㄨㄚ": { symbol: "ㄨㄚ", pinyin: "ua", type: "jieheyun", display: ["ㄨ","ㄚ"], kana: "「ウァ」の音", example: "蛙 (ㄨㄚ) ：カエル", word: "蛙", speakHelper: "蛙" },
+      "ㄨㄛ": { symbol: "ㄨㄛ", pinyin: "uo", type: "jieheyun", display: ["ㄨ","ㄛ"], kana: "「ウォ」の音", example: "水果 (ㄕㄨㄟˇ ㄍㄨㄛˇ) ：果物", word: "水果", speakHelper: "窩" },
+      "ㄨㄞ": { symbol: "ㄨㄞ", pinyin: "uai", type: "jieheyun", display: ["ㄨ","ㄞ"], kana: "「ワイ」の音", example: "外公 (ㄨㄞˋ ㄍㄨㄥ) ：祖父", word: "外公", speakHelper: "歪" },
+      "ㄨㄟ": { symbol: "ㄨㄟ", pinyin: "ui", type: "jieheyun", display: ["ㄨ","ㄟ"], kana: "「ウェイ」", example: "會 (ㄏㄨㄟˋ) ：できる", word: "會", speakHelper: "威" },
+      "ㄨㄢ": { symbol: "ㄨㄢ", pinyin: "uan", type: "jieheyun", display: ["ㄨ","ㄢ"], kana: "「ワン」の音", example: "碗 (ㄨㄢˇ) ：お碗", word: "碗", speakHelper: "彎" },
+      "ㄨㄣ": { symbol: "ㄨㄣ", pinyin: "un", type: "jieheyun", display: ["ㄨ","ㄣ"], kana: "「ウェン」", example: "問 (ㄨㄣˋ) ：尋ねる", word: "問", speakHelper: "溫" },
+      "ㄨㄤ": { symbol: "ㄨㄤ", pinyin: "uang", type: "jieheyun", display: ["ㄨ","ㄤ"], kana: "「ワン」(ng)", example: "黃色 (ㄏㄨㄤˊ ㄙㄜˋ) ：黄色", word: "黃色", speakHelper: "汪" },
+      "ㄨㄥ": { symbol: "ㄨㄥ", pinyin: "ong", type: "jieheyun", display: ["ㄨ","ㄥ"], kana: "「ウォン」", example: "紅 (ㄏㄨㄥˊ) ：赤い", word: "紅", speakHelper: "翁" },
+      "ㄩㄝ": { symbol: "ㄩㄝ", pinyin: "ue", type: "jieheyun", display: ["ㄩ","ㄝ"], kana: "「ユェ」の音", example: "月亮 (ㄩㄝˋ ㄌㄧㄤˋ) ：月", word: "月亮", speakHelper: "約" },
+      "ㄩㄢ": { symbol: "ㄩㄢ", pinyin: "uan", type: "jieheyun", display: ["ㄩ","ㄢ"], kana: "「ユェン」", example: "遠 (ㄩㄢˇ) ：遠い", word: "遠", speakHelper: "冤" },
+      "ㄩㄣ": { symbol: "ㄩㄣ", pinyin: "un", type: "jieheyun", display: ["ㄩ","ㄣ"], kana: "「ユン」の音", example: "雲 (ㄩㄣˊ) ：雲", word: "雲", speakHelper: "暈" },
+      "ㄩㄥ": { symbol: "ㄩㄥ", pinyin: "iong", type: "jieheyun", display: ["ㄩ","ㄥ"], kana: "「ヨン」(ng)", example: "兄弟 (ㄒㄧㄨㄥ ㄉㄧˋ) ：兄弟", word: "兄弟", speakHelper: "擁" }
+    };
+
+    let currentDisplayMode = "standard";
+    let isQuizActive = false;
+    let quizScore = 0;
+    let quizCurrentQuestion = 1;
+    let quizTargetSymbol = "";
+    let currentQuizChoices = [];
+    let speechVoice = null;
+
+    // Robot Page Selection Slots States
+    let robotSelectedConsonant = "";
+    let robotSelectedVowel = "";
+    let robotSelectedToneMark = "";
+    let robotSelectedToneName = "第一声";
+
+    const quizSymbolsList = [
+      "ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄉ", "ㄊ", "ㄋ", "ㄌ", "ㄍ", "ㄎ", "ㄏ",
+      "ㄐ", "ㄑ", "ㄒ", "ㄓ", "ㄔ", "ㄕ", "ㄖ", "ㄗ", "ㄘ", "ㄙ",
+      "ㄧ", "ㄨ", "ㄩ", "ㄚ", "ㄛ", "ㄜ", "ㄝ", "ㄞ", "ㄟ", "ㄠ", "ㄡ", "ㄢ", "ㄣ", "ㄤ", "ㄥ", "ㄦ"
+    ];
+
+    const shengfuColumns = [
+      ["ㄗ", "ㄘ", "ㄙ", ""], ["ㄓ", "ㄔ", "ㄕ", "ㄖ"], ["ㄐ", "ㄑ", "ㄒ", ""],
+      ["ㄍ", "ㄎ", "ㄏ", ""], ["ㄉ", "ㄊ", "ㄋ", "ㄌ"], ["ㄅ", "ㄆ", "ㄇ", "ㄈ"]
+    ];
+
+    const yunfuColumns = [
+      ["ㄦ", "", "", ""], ["ㄢ", "ㄣ", "ㄤ", "ㄥ"], ["ㄞ", "ㄟ", "ㄠ", "ㄡ"],
+      ["ㄚ", "ㄛ", "ㄜ", "ㄝ"], ["ㄧ", "ㄨ", "ㄩ", ""]
+    ];
+
+    // FIXED / CONFIRMED STRICT SEQUENTIAL ARRAYS FOR ROBOT BUILDER SELECTOR (ㄅ to ㄙ, ㄧ to ㄩㄥ)
+    const sortedRobotConsonants = [
+      "ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄉ", "ㄊ", "ㄋ", "ㄌ", "ㄍ", "ㄎ", "ㄏ", "ㄐ", "ㄑ", "ㄒ", "ㄓ", "ㄔ", "ㄕ", "ㄖ", "ㄗ", "ㄘ", "ㄙ"
+    ];
+    const sortedRobotVowels = [
+      "ㄧ", "ㄨ", "ㄩ", "ㄚ", "ㄛ", "ㄜ", "ㄝ", "ㄞ", "ㄟ", "ㄠ", "ㄡ", "ㄢ", "ㄣ", "ㄤ", "ㄥ", "ㄦ",
+      "ㄧㄚ", "ㄧㄛ", "ㄧㄝ", "ㄧㄞ", "ㄧㄠ", "ㄧㄡ", "ㄧㄢ", "ㄧㄣ", "ㄧㄤ", "ㄧㄥ",
+      "ㄨㄚ", "ㄨㄛ", "ㄨㄞ", "ㄨㄟ", "ㄨㄢ", "ㄨㄣ", "ㄨㄤ", "ㄨㄥ",
+      "ㄩㄝ", "ㄩㄢ", "ㄩㄣ", "ㄩㄥ"
+    ];
+
+    // Accurate Phonetic validator helper for Mandarin syllables
+    function isValidCombination(c, v) {
+      if (!v) return true; 
+      if (!c) return true; // Standalone vowel is always valid
+
+      // ㄐ, ㄑ, ㄒ can ONLY combine with ㄧ, ㄩ or combined rimes starting with ㄧ, ㄩ
+      if (["ㄐ", "ㄑ", "ㄒ"].includes(c)) {
+        return v === "ㄧ" || v === "ㄩ" || v.startsWith("ㄧ") || v.startsWith("ㄩ");
+      }
+
+      // ㄅ, ㄆ, ㄇ, ㄈ rules
+      if (["ㄅ", "ㄆ", "ㄇ", "ㄈ"].includes(c)) {
+        if (v === "ㄨ") return true;
+        if (v.startsWith("ㄨ") || v.startsWith("ㄩ") || v === "ㄩ") return false;
+        if (c === "ㄈ") {
+          return ["ㄚ", "ㄛ", "ㄟ", "ㄡ", "ㄢ", "ㄣ", "ㄤ", "ㄥ", "ㄨ"].includes(v);
+        }
+        if (v.startsWith("ㄧ")) {
+          return ["ㄧ", "ㄧㄝ", "ㄧㄠ", "ㄧㄢ", "ㄧㄣ", "ㄧㄥ"].includes(v);
+        }
+        return ["ㄚ", "ㄛ", "ㄞ", "ㄟ", "ㄠ", "ㄡ", "ㄢ", "ㄣ", "ㄤ", "ㄥ"].includes(v) || (c === "ㄇ" && v === "ㄜ");
+      }
+
+      // ㄍ, ㄎ, ㄏ rules
+      if (["ㄍ", "ㄎ", "ㄏ"].includes(c)) {
+        if (v === "ㄧ" || v.startsWith("ㄧ") || v === "ㄩ" || v.startsWith("ㄩ")) return false;
+        if (v === "ㄛ") return false;
+        return true;
+      }
+
+      // ㄓ, ㄔ, ㄕ, ㄖ, ㄗ, ㄘ, ㄙ rules
+      if (["ㄓ", "ㄔ", "ㄕ", "ㄖ", "ㄗ", "ㄘ", "ㄙ"].includes(c)) {
+        if (v === "ㄧ" || v.startsWith("ㄧ") || v === "ㄩ" || v.startsWith("ㄩ")) return false;
+        if (v === "ㄛ") return false;
+        if (c === "ㄖ" && ["ㄞ", "ㄟ", "ㄤ"].includes(v)) return false;
+        return true;
+      }
+
+      // ㄉ, ㄊ, ㄋ, ㄌ rules
+      if (["ㄉ", "ㄊ"].includes(c)) {
+        if (v === "ㄩ" || v.startsWith("ㄩ") || v === "ㄨㄥ") return false;
+        if (v.startsWith("ㄨ") && !["ㄨ", "ㄨㄚ", "ㄨㄛ", "ㄨㄞ", "ㄨㄟ", "ㄨㄢ", "ㄨㄣ"].includes(v)) return false;
+        if (v.startsWith("ㄧ") && !["ㄧ", "ㄧㄝ", "ㄧㄠ", "ㄧㄡ", "ㄧㄢ", "ㄧㄥ"].includes(v)) return false;
+        if (v === "ㄛ") return false;
+        return true;
+      }
+
+      if (["ㄋ", "ㄌ"].includes(c)) {
+        if (v === "ㄛ") return false;
+        return true;
+      }
+
+      return true;
+    }
+
+    function initVoices() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          const voices = window.speechSynthesis.getVoices();
+          speechVoice = voices.find(v => v.lang === 'zh-TW' && (v.name.includes('Hanhan') || v.name.includes('Yating'))) ||
+                        voices.find(v => v.lang.includes('zh-TW')) || voices.find(v => v.lang.includes('zh'));
+        };
+      }
+    }
+
+    // STRICT single pronunciation delivery system (再生1回のみ)
+    function playAudio(symbol, playRate = 0.75) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        let text = symbol;
+        if (bopomofoData[symbol] && bopomofoData[symbol].speakHelper) {
+          text = bopomofoData[symbol].speakHelper;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        if (speechVoice) utterance.voice = speechVoice;
+        utterance.lang = 'zh-TW';
+        utterance.rate = playRate;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function speakExampleWord() {
+      if (currentModalSymbol && bopomofoData[currentModalSymbol].word) {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(bopomofoData[currentModalSymbol].word);
+          if (speechVoice) utterance.voice = speechVoice;
+          utterance.lang = 'zh-TW';
+          utterance.rate = 0.8;
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+    }
+
+    window.onload = function() {
+      renderGrids();
+      initVoices();
+      initRobotSelectors();
+      lucide.createIcons();
+      initCanvas();
+    };
+
+    function renderGrids() {
+      // 1. DESKTOP Shengfu Grid (子音)
+      const shengfuGrid = document.getElementById("grid-shengfu-desktop");
+      shengfuGrid.innerHTML = "";
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 6; c++) {
+          shengfuGrid.appendChild(createCell(shengfuColumns[c][r], "cyan"));
+        }
+      }
+
+      // 2. DESKTOP Yunfu Grid (母音)
+      const yunfuGrid = document.getElementById("grid-yunfu-desktop");
+      yunfuGrid.innerHTML = "";
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 5; c++) {
+          yunfuGrid.appendChild(createCell(yunfuColumns[c][r], "emerald"));
+        }
+      }
+
+      // 3. MOBILE Shengfu Grid (Fully stacked for smartphone vertical screen,ㄅㄆㄇㄈ sequence)
+      const shengfuMobile = document.getElementById("grid-shengfu-mobile");
+      shengfuMobile.innerHTML = "";
+      sortedRobotConsonants.forEach(symbol => {
+        shengfuMobile.appendChild(createCell(symbol, "cyan"));
+      });
+
+      // 4. MOBILE Yunfu Grid (Fully stacked, standard sequene)
+      const yunfuMobile = document.getElementById("grid-yunfu-mobile");
+      yunfuMobile.innerHTML = "";
+      sortedRobotVowels.slice(0, 16).forEach(symbol => { // Extract first 16 single vowels
+        yunfuMobile.appendChild(createCell(symbol, "emerald"));
+      });
+
+      // 5. Desktop Combined Rimes Grid (Bottom Block - Vertical Stack Custom Formatter)
+      const combinedGridDesktop = document.getElementById("grid-combined-rimes-desktop");
+      combinedGridDesktop.innerHTML = "";
+      Object.keys(bopomofoData).forEach(key => {
+        if (bopomofoData[key].type === "jieheyun") {
+          combinedGridDesktop.appendChild(createCombinedCell(key));
+        }
+      });
+
+      // 6. Mobile Combined Rimes Grid (Responsive wrapping grid)
+      const combinedGridMobile = document.getElementById("grid-combined-rimes-mobile");
+      combinedGridMobile.innerHTML = "";
+      Object.keys(bopomofoData).forEach(key => {
+        if (bopomofoData[key].type === "jieheyun") {
+          combinedGridMobile.appendChild(createCombinedCell(key));
+        }
+      });
+    }
+
+    function createCell(symbol, theme) {
+      const cell = document.createElement("button");
+      if (!symbol) {
+        cell.className = "aspect-square rounded-xl border border-dashed border-stone-200 bg-stone-50/20 pointer-events-none";
+        return cell;
+      }
+      let themeClass = theme === "cyan" ? "border-cyan-300 bg-cyan-50/40 text-cyan-800 hover:bg-cyan-50/80" : "border-emerald-300 bg-emerald-50/40 text-emerald-800 hover:bg-emerald-50/80";
+      cell.className = `aspect-square text-2xl font-bold flex flex-col justify-center items-center rounded-xl border-2 dashed-box transition ${themeClass} shadow-xs`;
+      cell.setAttribute("onclick", `onCellClick('${symbol}')`);
+      cell.id = `cell-${symbol}`;
+      
+      const symSpan = document.createElement("span");
+      symSpan.className = "serif-title";
+      symSpan.innerText = symbol;
+      cell.appendChild(symSpan);
+
+      if (currentDisplayMode === "pinyin") {
+        const pinSpan = document.createElement("span");
+        pinSpan.className = "text-xs font-bold font-sans text-stone-400 mt-0.5";
+        pinSpan.innerText = bopomofoData[symbol].pinyin;
+        cell.appendChild(pinSpan);
+      }
+      return cell;
+    }
+
+    // Creates the vertical stack layout requested for combined rimes (ㄧ on top, ㄚ below)
+    function createCombinedCell(symbol) {
+      const cell = document.createElement("button");
+      const data = bopomofoData[symbol];
+      cell.className = "aspect-square border-2 dashed-box border-rose-300 bg-rose-50/30 text-rose-800 hover:bg-rose-50/70 rounded-xl flex flex-col items-center justify-center p-1 transition shadow-xs";
+      cell.setAttribute("onclick", `onCellClick('${symbol}')`);
+
+      const stackWrap = document.createElement("div");
+      stackWrap.className = "flex flex-col items-center justify-center leading-none tracking-normal font-bold text-lg";
+      
+      // Render components vertically stacked
+      data.display.forEach(char => {
+        const block = document.createElement("span");
+        block.className = "serif-title block";
+        block.innerText = char;
+        stackWrap.appendChild(block);
+      });
+      cell.appendChild(stackWrap);
+
+      if (currentDisplayMode === "pinyin") {
+        const pin = document.createElement("span");
+        pin.className = "text-[10px] font-sans font-medium text-stone-400 mt-0.5";
+        pin.innerText = data.pinyin;
+        cell.appendChild(pin);
+      }
+      return cell;
+    }
+
+    function onCellClick(symbol) {
+      playAudio(symbol, 0.75);
+      showDetailModal(symbol);
+    }
+
+    function changeMode(mode) {
+      currentDisplayMode = mode;
+      document.getElementById("btn-standard").className = mode === "standard" ? "px-3 py-1.5 rounded-lg bg-white text-stone-800 shadow-sm" : "px-3 py-1.5 rounded-lg text-stone-500 hover:text-stone-800";
+      document.getElementById("btn-pinyin").className = mode === "pinyin" ? "px-3 py-1.5 rounded-lg bg-white text-stone-800 shadow-sm" : "px-3 py-1.5 rounded-lg text-stone-500 hover:text-stone-800";
+      renderGrids();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content-block").forEach(block => block.classList.add("hidden"));
+      document.getElementById(`page-${tabId.split('-')[0]}-content`).classList.remove("hidden");
+      
+      document.getElementById("tab-chart-page").className = tabId === "chart-page" ? "px-4 py-2 rounded-lg transition-all tab-active shadow-sm flex items-center gap-1.5" : "px-4 py-2 rounded-lg transition-all text-stone-500 hover:text-stone-800 flex items-center gap-1.5";
+      document.getElementById("tab-robot-page").className = tabId === "robot-page" ? "px-4 py-2 rounded-lg transition-all tab-active shadow-sm flex items-center gap-1.5" : "px-4 py-2 rounded-lg transition-all text-stone-500 hover:text-stone-800 flex items-center gap-1.5";
+    }
+
+    // --- MODAL & ABSOLUTE CENTER CANVAS GRID ENGINE ---
+    let currentModalSymbol = "";
+    function showDetailModal(symbol) {
+      currentModalSymbol = symbol;
+      const data = bopomofoData[symbol];
+      document.getElementById("modal-char").innerText = symbol;
+
+      // Perfectly center vertical stacking inside the 九宮格 guide for combined rimes
+      const guideBox = document.getElementById("canvas-guide");
+      if (data.type === "jieheyun") {
+        guideBox.innerHTML = `
+          <div class="flex flex-col items-center justify-center leading-[0.8] text-[110px] font-black tracking-tighter w-full h-full select-none pointer-events-none">
+            ${data.display.map(char => `<span class="block text-center">${char}</span>`).join('')}
+          </div>
+        `;
+      } else {
+        guideBox.innerText = symbol;
+        guideBox.className = "absolute inset-0 flex items-center justify-center text-[190px] font-black text-stone-200/50 select-none serif-title pointer-events-none z-0";
+      }
+
+      document.getElementById("modal-title").innerText = `注音符号 ${symbol}`;
+      document.getElementById("modal-pinyin").innerText = data.pinyin || "N/A";
+      document.getElementById("modal-type").innerText = data.type === "shengfu" ? "子音 (声母)" : (data.type === "yunfu" ? "母音 (韻母)" : "結合母音");
+      document.getElementById("modal-accent-bg").className = `w-14 h-14 rounded-xl flex items-center justify-center text-2xl font-black text-white ${data.type === "shengfu" ? "bg-cyan-600" : (data.type === "yunfu" ? "bg-emerald-600" : "bg-rose-600")}`;
+      document.getElementById("modal-kana").innerText = data.kana || "複合音";
+      document.getElementById("modal-tip").innerText = data.tip || "複数の注音符号を連続して素早く一息に滑らかに発音します。";
+      document.getElementById("modal-example").innerText = data.example || "—";
+      document.getElementById("modal-hle-link").href = "https://kidsvideo1.hle.com.tw/1/";
+      document.getElementById("detail-modal").classList.remove("hidden");
+      clearCanvas();
+      resizeCanvas();
+    }
+
+    function closeModal() { document.getElementById("detail-modal").classList.add("hidden"); }
+    function speakCurrentSymbol(speed) { if (currentModalSymbol) playAudio(currentModalSymbol, speed); }
+
+    // --- CANVAS ENHANCED 3X3 NINE BOX GRAPHICS ---
+    let canvas, ctx, isDrawing = false;
+    function initCanvas() {
+      canvas = document.getElementById("canvas");
+      ctx = canvas.getContext("2d");
+      canvas.addEventListener("mousedown", startDrawing);
+      canvas.addEventListener("mousemove", draw);
+      canvas.addEventListener("mouseup", stopDrawing);
+      canvas.addEventListener("mouseleave", stopDrawing);
+      canvas.addEventListener("touchstart", (e) => {
+        const touch = e.touches[0]; const rect = canvas.getBoundingClientRect();
+        isDrawing = true; ctx.beginPath(); ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+        e.preventDefault();
+      });
+      canvas.addEventListener("touchmove", (e) => {
+        if (!isDrawing) return; const touch = e.touches[0]; const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top); ctx.stroke(); e.preventDefault();
+      });
+      canvas.addEventListener("touchend", stopDrawing);
+    }
+
+    function resizeCanvas() {
+      if (!canvas) return;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      drawCanvasGrid();
+    }
+
+    function drawCanvasGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.strokeStyle = "rgba(245, 158, 11, 0.2)"; // Amber color grid lines
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 5]);
+
+      // 3x3 Grid Vertical Lines
+      ctx.beginPath(); ctx.moveTo(canvas.width / 3, 0); ctx.lineTo(canvas.width / 3, canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo((2 * canvas.width) / 3, 0); ctx.lineTo((2 * canvas.width) / 3, canvas.height); ctx.stroke();
+      
+      // 3x3 Grid Horizontal Lines
+      ctx.beginPath(); ctx.moveTo(0, canvas.height / 3); ctx.lineTo(canvas.width, canvas.height / 3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, (2 * canvas.height) / 3); ctx.lineTo(canvas.width, (2 * canvas.height) / 3); ctx.stroke();
+
+      // Diagonal lines across canvas
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width, canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(0, canvas.height); ctx.stroke();
+
+      ctx.restore();
+      setupCanvasStyling();
+    }
+
+    function setupCanvasStyling() {
+      ctx.strokeStyle = "#b45309"; ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    }
+    function startDrawing(e) { isDrawing = true; const rect = canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top); }
+    function draw(e) { if (!isDrawing) return; const rect = canvas.getBoundingClientRect(); ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctx.stroke(); }
+    function stopDrawing() { isDrawing = false; }
+    function clearCanvas() { if (canvas) drawCanvasGrid(); }
+
+    // --- PROGRESSIVE 10-QUESTION TURNS SYSTEM (十題制聽力模式) ---
+    function startQuiz() {
+      isQuizActive = true; quizScore = 0; quizCurrentQuestion = 1;
+      document.getElementById("quiz-screen-score").innerText = quizScore;
+      document.getElementById("quiz-feedback-text").innerText = "";
+      
+      // Reset UI state for inline result card
+      document.getElementById("quiz-main-box").classList.remove("hidden");
+      document.getElementById("quiz-result-card").classList.add("hidden");
+      
+      document.getElementById("quiz-screen").classList.remove("hidden");
+      nextQuizTurn();
+    }
+
+    function endQuiz() { isQuizActive = false; document.getElementById("quiz-screen").classList.add("hidden"); }
+
+    function nextQuizTurn() {
+      document.getElementById("quiz-question-index").innerText = `${quizCurrentQuestion} / 10`;
+      const randomIndex = Math.floor(Math.random() * quizSymbolsList.length);
+      quizTargetSymbol = quizSymbolsList[randomIndex];
+      
+      currentQuizChoices = [quizTargetSymbol];
+      while (currentQuizChoices.length < 4) {
+        const dist = quizSymbolsList[Math.floor(Math.random() * quizSymbolsList.length)];
+        if (!currentQuizChoices.includes(dist)) currentQuizChoices.push(dist);
+      }
+      currentQuizChoices.sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById(`choice-${i}`);
+        btn.innerText = currentQuizChoices[i];
+        btn.className = "aspect-[2.2/1] rounded-xl border border-stone-200 bg-white text-2xl font-bold flex items-center justify-center text-stone-800 transition shadow-xs hover:scale-[1.01]";
+      }
+      replayQuizAudio();
+    }
+
+    function replayQuizAudio() { if (quizTargetSymbol) playAudio(quizTargetSymbol, 0.75); }
+
+    function submitQuizAnswer(index) {
+      const chosen = currentQuizChoices[index];
+      const btn = document.getElementById(`choice-${index}`);
+      const fb = document.getElementById("quiz-feedback-text");
+
+      if (chosen === quizTargetSymbol) {
+        quizScore += 10;
+        document.getElementById("quiz-screen-score").innerText = quizScore;
+        btn.className = "aspect-[2.2/1] rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-800 text-2xl font-bold flex items-center justify-center ring-4 ring-emerald-200 scale-102 transition";
+        fb.className = "text-xs font-bold text-emerald-600 animate-bounce"; fb.innerText = "正解！";
+      } else {
+        btn.className = "aspect-[2.2/1] rounded-xl border border-rose-500 bg-rose-50 text-rose-800 text-2xl font-bold flex items-center justify-center ring-4 ring-rose-200 animate-shake transition";
+        fb.className = "text-xs font-bold text-rose-600"; fb.innerText = "不正解！";
+      }
+
+      setTimeout(() => {
+        fb.innerText = "";
+        if (quizCurrentQuestion >= 10) {
+          // Completed. Trigger beautiful inline modal card inside the view (replaces window.alert)
+          document.getElementById("quiz-main-box").classList.add("hidden");
+          document.getElementById("quiz-final-score-badge").innerText = quizScore;
+          document.getElementById("quiz-result-card").classList.remove("hidden");
+        } else {
+          quizCurrentQuestion++;
+          nextQuizTurn();
+        }
+      }, 1000);
+    }
+
+    // --- SYSTEM TAB 2: SPEECH ROBOT ENGINE with strict sequential arrays ---
+    function initRobotSelectors() {
+      const conBox = document.getElementById("robot-consonants");
+      conBox.innerHTML = "";
+      
+      // Standardized Empty Choice
+      const emptyBtn = document.createElement("button");
+      emptyBtn.className = "p-2 border text-xs font-bold rounded-lg border-dashed text-stone-400 bg-stone-50";
+      emptyBtn.innerText = "[無子音]";
+      emptyBtn.onclick = () => selectRobotConsonant("");
+      emptyBtn.id = "robot-c-empty";
+      conBox.appendChild(emptyBtn);
+
+      // Populating consonants strictly according to the sorted sequence (ㄅㄆㄇㄈ...)
+      sortedRobotConsonants.forEach(key => {
+        const btn = document.createElement("button");
+        btn.className = "p-2 border text-sm font-bold rounded-lg bg-white border-stone-200 hover:border-cyan-500";
+        btn.innerText = key;
+        btn.onclick = () => selectRobotConsonant(key);
+        btn.id = `robot-c-${key}`;
+        conBox.appendChild(btn);
+      });
+
+      const vowBox = document.getElementById("robot-vowels");
+      vowBox.innerHTML = "";
+      // Populating vowels strictly according to the sorted sequence (ㄧㄨㄩㄚㄛㄜㄝ...)
+      sortedRobotVowels.forEach(key => {
+        const btn = document.createElement("button");
+        btn.className = "p-1.5 border text-xs font-semibold rounded-lg bg-white border-stone-200 hover:border-emerald-500";
+        btn.innerText = key;
+        btn.onclick = () => selectRobotVowel(key);
+        btn.id = `robot-v-${key}`;
+        vowBox.appendChild(btn);
+      });
+      selectRobotTone('', '第一声');
+    }
+
+    function selectRobotConsonant(symbol) {
+      robotSelectedConsonant = symbol;
+      document.querySelectorAll("[id^='robot-c-']").forEach(el => el.classList.remove("bg-cyan-500", "text-white", "border-cyan-600"));
+      const targetId = symbol ? `robot-c-${symbol}` : "robot-c-empty";
+      document.getElementById(targetId).classList.add("bg-cyan-500", "text-white", "border-cyan-600");
+      updateRobotPreview();
+    }
+
+    function selectRobotVowel(symbol) {
+      robotSelectedVowel = symbol;
+      document.querySelectorAll("[id^='robot-v-']").forEach(el => el.classList.remove("bg-emerald-500", "text-white", "border-emerald-600"));
+      document.getElementById(`robot-v-${symbol}`).classList.add("bg-emerald-500", "text-white", "border-emerald-600");
+      updateRobotPreview();
+    }
+
+    function selectRobotTone(mark, name) {
+      robotSelectedToneMark = mark;
+      robotSelectedToneName = name;
+      document.querySelectorAll("[id^='tone-r-']").forEach(el => el.classList.remove("bg-rose-500", "text-white", "border-rose-600"));
+      const targetId = mark ? `tone-r-${mark}` : "tone-r-";
+      document.getElementById(targetId).classList.add("bg-rose-500", "text-white", "border-rose-600");
+      updateRobotPreview();
+    }
+
+    // Toggle validation and display cross for invalid Chinese combinations
+    function updateRobotPreview() {
+      const isValid = isValidCombination(robotSelectedConsonant, robotSelectedVowel);
+      const previewStr = (robotSelectedConsonant || "") + (robotSelectedVowel || "—") + (robotSelectedToneMark || "");
+      
+      const previewEl = document.getElementById("preview-display-string");
+      const playBtn = document.getElementById("robot-play-btn");
+      const toneNameEl = document.getElementById("preview-display-tone-name");
+      
+      if (!isValid && robotSelectedVowel) {
+        // Invalid combination: Render red cross "❌" and disable play controls
+        previewEl.innerHTML = `<span class="text-rose-500 flex items-center gap-1">❌ <span class="text-stone-400 text-lg line-through">${previewStr}</span></span>`;
+        toneNameEl.innerText = "不成立の組み合わせ";
+        toneNameEl.className = "text-[10px] font-bold text-rose-500";
+        playBtn.disabled = true;
+        playBtn.className = "bg-stone-300 text-stone-500 w-10 h-10 rounded-lg flex items-center justify-center cursor-not-allowed transition opacity-50";
+      } else {
+        previewEl.innerText = previewStr;
+        toneNameEl.innerText = robotSelectedToneName;
+        toneNameEl.className = "text-[10px] font-medium text-stone-400";
+        playBtn.disabled = false;
+        playBtn.className = "bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-900 w-10 h-10 rounded-lg flex items-center justify-center transition shadow-md";
+      }
+    }
+
+    function triggerRobotVoiceSynthesis() {
+      if (!robotSelectedVowel) {
+        return;
+      }
+      
+      let textToSpeak = "";
+      const baseCombined = (robotSelectedConsonant || "") + robotSelectedVowel;
+
+      const explicitMapping = {
+        "ㄅㄚ": "八", "ㄅㄚˊ": "拔", "ㄅㄚˇ": "把", "ㄅㄚˋ": "爸", "ㄅㄛ": "波", "ㄅㄛˊ": "博", "ㄅㄛˇ": "跛", "ㄅㄛˋ": "擘",
+        "ㄇㄚ": "媽", "ㄇㄚˊ": "麻", "ㄇㄚˇ": "馬", "ㄇㄚˋ": "罵", "ㄇㄧ": "咪", "ㄇㄧˊ": "迷", "ㄇㄧˇ": "米", "ㄇㄧˋ": "密",
+        "ㄌㄚ": "拉", "ㄌㄚˊ": "藍", "ㄌㄚˇ": "喇", "ㄌㄚˋ": "辣", "ㄌㄧ": "哩", "ㄌㄧˊ": "梨", "ㄌㄧˇ": "鯉", "ㄌㄧˋ": "利",
+        "ㄧㄚ": "鴨", "ㄧㄚˊ": "牙", "ㄧㄚˇ": "雅", "ㄧㄚˋ": "亞", "ㄨㄛ": "窩", "ㄨㄛˊ": "駝", "ㄨㄛˇ": "我", "ㄨㄛˋ": "握"
+      };
+
+      const lookupKey = baseCombined + robotSelectedToneMark;
+      if (explicitMapping[lookupKey]) {
+        textToSpeak = explicitMapping[lookupKey];
+      } else {
+        textToSpeak = baseCombined;
+      }
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        if (speechVoice) utterance.voice = speechVoice;
+        utterance.lang = 'zh-TW';
+        utterance.rate = 0.75;
+        
+        if (robotSelectedToneMark === 'ˋ') utterance.pitch = 0.9;
+        if (robotSelectedToneMark === 'ˊ') utterance.pitch = 1.1;
+
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  </script>
+</body>
+</html>
